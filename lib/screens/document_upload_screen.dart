@@ -49,12 +49,19 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
 
   Future<void> _uploadDocument() async {
     try {
-      final result = await FilePicker.platform.pickFiles();
-      if (result != null) {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
+        
         if (file.path != null) {
           await Provider.of<DocumentService>(context, listen: false)
               .uploadDocument(file.path!, file.name);
+          
           await _loadDocuments();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -98,45 +105,88 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Documents',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Upload Documents',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Supported formats: PDF, DOC, DOCX, JPG, JPEG, PNG',
+                      style: TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoading ? null : _uploadDocument,
+                        icon: const Icon(Icons.upload_file),
+                        label: const Text('Select Document'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _isLoading ? null : _uploadDocument,
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Upload Document'),
-            ),
-            const SizedBox(height: 16),
             Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _documents.isEmpty
-                      ? const Center(child: Text('No documents uploaded yet'))
-                      : ListView.builder(
-                          itemCount: _documents.length,
-                          itemBuilder: (context, index) {
-                            final document = _documents[index];
-                            return Card(
-                              child: ListTile(
-                                leading: const Icon(Icons.description),
-                                title: Text(document['name']),
-                                subtitle: Text(
-                                  'Uploaded: ${DateTime.parse(document['timestamp']).toLocal()}'
-                                      .split('.')[0],
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  onPressed: () => _deleteDocument(document['name']),
-                                ),
-                              ),
-                            );
-                          },
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Uploaded Documents',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: _isLoading
+                          ? const Center(
+                              child: CircularProgressIndicator(),
+                            )
+                          : _documents.isEmpty
+                            ? const Center(
+                                child: Text('No documents uploaded yet'),
+                              )
+                            : ListView.builder(
+                                itemCount: _documents.length,
+                                itemBuilder: (context, index) {
+                                  final document = _documents[index];
+                                  return Card(
+                                    child: ListTile(
+                                      leading: const Icon(Icons.description),
+                                      title: Text(document['name'] as String),
+                                      subtitle: Text(
+                                        'Uploaded: ${document['uploadDate']}',
+                                      ),
+                                      trailing: IconButton(
+                                        icon: const Icon(Icons.delete),
+                                        onPressed: () => _deleteDocument(document['name'] as String),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),

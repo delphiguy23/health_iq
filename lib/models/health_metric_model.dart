@@ -1,4 +1,9 @@
-enum MetricType { bloodSugar, bloodPressure, diet }
+enum MetricType
+{
+  bloodSugar,
+  bloodPressure,
+  diet
+}
 
 class HealthMetric {
   final String id;
