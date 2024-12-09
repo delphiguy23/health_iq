@@ -2,7 +2,7 @@ enum MetricType
 {
   bloodSugar,
   bloodPressure,
-  diet
+  fasting
 }
 
 class HealthMetric {
@@ -11,8 +11,9 @@ class HealthMetric {
   final double value;
   final double? systolic;  // For blood pressure
   final double? diastolic; // For blood pressure
-  final String? foodItem;  // For diet
-  final int? calories;     // For diet
+  final DateTime? startTime;  // For fasting
+  final DateTime? endTime;    // For fasting
+  final int? duration;        // For fasting (in hours)
   final DateTime timestamp;
   final String? notes;
 
@@ -22,8 +23,9 @@ class HealthMetric {
     required this.value,
     this.systolic,
     this.diastolic,
-    this.foodItem,
-    this.calories,
+    this.startTime,
+    this.endTime,
+    this.duration,
     required this.timestamp,
     this.notes,
   });
@@ -37,8 +39,9 @@ class HealthMetric {
       value: (json['value'] as num).toDouble(),
       systolic: json['systolic'] != null ? (json['systolic'] as num).toDouble() : null,
       diastolic: json['diastolic'] != null ? (json['diastolic'] as num).toDouble() : null,
-      foodItem: json['foodItem'] as String?,
-      calories: json['calories'] as int?,
+      startTime: json['startTime'] != null ? DateTime.parse(json['startTime'] as String) : null,
+      endTime: json['endTime'] != null ? DateTime.parse(json['endTime'] as String) : null,
+      duration: json['duration'] as int?,
       timestamp: DateTime.parse(json['timestamp'] as String),
       notes: json['notes'] as String?,
     );
@@ -51,40 +54,33 @@ class HealthMetric {
       'value': value,
       'systolic': systolic,
       'diastolic': diastolic,
-      'foodItem': foodItem,
-      'calories': calories,
+      'startTime': startTime?.toIso8601String(),
+      'endTime': endTime?.toIso8601String(),
+      'duration': duration,
       'timestamp': timestamp.toIso8601String(),
       'notes': notes,
     };
   }
 
-  String getStatus() {
+  String get displayValue {
     switch (type) {
       case MetricType.bloodSugar:
-        return _analyzeBloodSugar(value);
+        return '$value mg/dL';
       case MetricType.bloodPressure:
-        if (systolic != null && diastolic != null) {
-          return _analyzeBloodPressure(systolic!, diastolic!);
-        }
-        return 'unknown';
-      case MetricType.diet:
-        return 'recorded';
+        return '$systolic/$diastolic mmHg';
+      case MetricType.fasting:
+        return '${duration ?? 0} hours';
     }
   }
 
-  static String _analyzeBloodSugar(double value) {
-    // Based on general guidelines for blood sugar levels (mg/dL)
-    if (value < 70) return 'low';
-    if (value >= 70 && value <= 140) return 'normal';
-    return 'high';
-  }
-
-  static String _analyzeBloodPressure(double systolic, double diastolic) {
-    // Based on American Heart Association guidelines
-    if (systolic < 90 || diastolic < 60) return 'low';
-    if (systolic <= 120 && diastolic <= 80) return 'normal';
-    if (systolic <= 129 && diastolic < 80) return 'elevated';
-    if (systolic <= 139 || diastolic <= 89) return 'high stage 1';
-    return 'high stage 2';
+  String get metricName {
+    switch (type) {
+      case MetricType.bloodSugar:
+        return 'Blood Sugar';
+      case MetricType.bloodPressure:
+        return 'Blood Pressure';
+      case MetricType.fasting:
+        return 'Fasting';
+    }
   }
 }
